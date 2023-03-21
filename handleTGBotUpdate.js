@@ -46,7 +46,7 @@ async function handleMessage(message) {
         }
     } else {
         // 未知内容类型
-        await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" });
+        // await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" });
     }
     console.log('----------- TG UPDATE MESSAGE END -----------');
 }
