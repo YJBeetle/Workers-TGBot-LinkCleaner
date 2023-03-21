@@ -36,8 +36,9 @@ async function handleMessage(message) {
             // Command
             await handleCommand(text, chatID, userID);
         } else {
-            if (text.startsWith("https://b23.tv/") || text.startsWith("http://b23.tv/") || text.startsWith("b23.tv/")) {
-                const result = await fetch(text, { method: "GET", redirect: "manual" })
+            const url = text.match(/(https|http):\/\/b23.tv\/\w*/)
+            if (url) {
+                const result = await fetch(url[0], { method: "GET", redirect: "manual" })
                 const location = result.headers.get('location')
                 const bv = location.match(/https:\/\/www.bilibili.com\/video\/(.*?)\?/)[1]
                 console.log("text: ", text);
