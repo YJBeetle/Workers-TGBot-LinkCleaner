@@ -26,8 +26,10 @@ async function handleMessage(message) {
     console.log("message.chat:", message.chat);
     const userID = message.from.id;
     const chatID = message.chat.id;
+    const chatType = message.chat.type;
     console.log("userID:", userID);
     console.log("chatID:", chatID);
+    console.log("chatType:", chatType);
     if (message.text) {
         console.log("message type:", "text");
         const text = message.text;
@@ -47,7 +49,8 @@ async function handleMessage(message) {
         }
     } else {
         // 未知内容类型
-        // await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" });
+        if (chatType === 'private')
+            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" });
     }
     console.log('----------- TG UPDATE MESSAGE END -----------');
 }
