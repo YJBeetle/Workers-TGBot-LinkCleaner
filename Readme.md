@@ -4,7 +4,9 @@
 
 这个Bot设计用于在Cloudflare Workers上运行
 
-## 环境
+## 手动部署说明
+
+### 环境
 
 若这是您首次使用Cloudflare Workers，则需按本章节操作。
 
@@ -12,15 +14,21 @@
 
 执行`npx wrangler login`登陆您的Cloudflare账户。
 
-## 部署至Workers
+### 部署至Workers
 
 执行`npx wrangler publish`部署至Workers。
 
-## 设置Telegram Token至Cloudflare Workers Secret
+### 设置Telegram Token至Cloudflare Workers Secret
 
 通过 https://t.me/BotFather 获取您的Bot的Token。
 
 执行`npx wrangler secret put TG_BOT_TOKEN`，并在下方填入刚才获取的Token。
+
+## GitHub Actions自动化部署说明
+
+打开GitHub项目主页，点击Settings->Secrets and variables->Actions
+
+分别添加 `CF_ACCOUNT_ID` `CF_API_TOKEN` `TG_BOT_TOKEN` 三个变量
 
 ## 设置Telegram Webhook地址
 
