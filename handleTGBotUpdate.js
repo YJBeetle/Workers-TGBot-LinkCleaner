@@ -33,10 +33,10 @@ async function handleMessage(message, userID, chatID, type, msgId) {
             const location = result.headers.get("location") ?? rawLinks[0];
             const cleanLinks = location.replace(/(\?+.*)$/g, '');
             if (rawLinks[0] !== cleanLinks) {
-                if (type === "group")
-                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks, reply_to_message_id: msgId });
-                else
+                if (type === "private")
                     await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks });
+                else
+                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks, reply_to_message_id: msgId });
             } else if (type === "private") {
                 await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~" })
             }
