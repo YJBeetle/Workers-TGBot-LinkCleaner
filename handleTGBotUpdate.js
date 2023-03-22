@@ -19,7 +19,7 @@ async function handleCommand(text, chatID, userID) {
     }
 }
 
-async function handleMessage(message, userID, chatID, type) {
+async function handleMessage(message, userID, chatID, type, msgId) {
     const pattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
     if (!message) return;
 
@@ -31,9 +31,12 @@ async function handleMessage(message, userID, chatID, type) {
         if (rawLinks) {
             const result = await fetch(rawLinks[0], { method: "HEAD", redirect: "manual" });
             const location = result.headers.get("location") ?? rawLinks[0];
-            const cleanLinks = location.replace(/(\?+.*)$/g,'');
+            const cleanLinks = location.replace(/(\?+.*)$/g, '');
             if (rawLinks[0] !== cleanLinks) {
-                await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks });
+                if (type === "group")
+                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks, reply_to_message_id: msgId });
+                else
+                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks });
             } else if (type === "private") {
                 await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~" })
             }
@@ -47,12 +50,13 @@ async function handleTGBotUpdate(request) {
         const update = await request.json();
         const msg = update.message;
         const txt = msg.text;
+        const msgId = msg.message_id;
         const type = msg.chat.type;
         const userID = msg.from.id;
         const chatID = msg.chat.id;
 
         if (txt) {
-            await handleMessage(txt, userID, chatID, type);
+            await handleMessage(txt, userID, chatID, type, msgId);
         } else if (type === "private") {
             await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" })
         }
