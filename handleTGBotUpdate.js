@@ -7,8 +7,7 @@ async function handleCommand(text, chatID, userID) {
 
     switch (command) {
         case 'start': {
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "我可以帮你删除Bilibili短链接的跟踪信息。" });
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "请试着给我发链接吧！" });
+            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "我可以帮你删除链接中的跟踪信息，如抖音、B站短链，推特链接等。\n请试着给我发链接吧！" });
         } break;
         case 'help': {
             await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "直接给我发链接就行啦！" });
@@ -20,53 +19,43 @@ async function handleCommand(text, chatID, userID) {
     }
 }
 
-async function handleMessage(message) {
-    console.log('----------- TG UPDATE MESSAGE -----------');
-    console.log("message:", message);
-    console.log("message.chat:", message.chat);
-    const userID = message.from.id;
-    const chatID = message.chat.id;
-    const chatType = message.chat.type;
-    console.log("userID:", userID);
-    console.log("chatID:", chatID);
-    console.log("chatType:", chatType);
-    if (message.text) {
-        console.log("message type:", "text");
-        const text = message.text;
-        console.log("text:", text);
-        if (text.startsWith("/")) {
-            // Command
-            await handleCommand(text, chatID, userID);
-        } else {
-            const url = text.match(/(https|http):\/\/b23.tv\/\w*/)
-            if (url) {
-                const result = await fetch(url[0], { method: "GET", redirect: "manual" })
-                const location = result.headers.get('location')
-                const bv = location.match(/https:\/\/www.bilibili.com\/video\/(.*?)\?/)[1]
-                console.log("text: ", text);
-                await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: `https://www.bilibili.com/video/${bv}` });
+async function handleMessage(message, userID, chatID, type) {
+    const pattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
+    if (!message) return;
+
+    if (message.startsWith("/")) {
+        // Command
+        await handleCommand(message, chatID, userID);
+    } else {
+        const rawLinks = message.match(pattern);
+        if (rawLinks) {
+            const result = await fetch(rawLinks[0], { method: "HEAD", redirect: "manual" });
+            const location = result.headers.get("location") ?? rawLinks[0];
+            const cleanLinks = location.replace(/(\?+.*)$/g,'');
+            if (rawLinks[0] !== cleanLinks) {
+                await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks });
+            } else if (type === "private") {
+                await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~" })
             }
         }
-    } else {
-        // 未知内容类型
-        if (chatType === 'private')
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" });
     }
-    console.log('----------- TG UPDATE MESSAGE END -----------');
 }
+
 
 async function handleTGBotUpdate(request) {
     try {
-        console.log("=========== TG UPDATE ===========");
         const update = await request.json();
-        console.log("update_id:", update.update_id);
-        if (update.message) {
-            console.log("type:", "message");
-            await handleMessage(update.message);
-        } else {
-            console.log("type:", "unknow");
+        const msg = update.message;
+        const txt = msg.text;
+        const type = msg.chat.type;
+        const userID = msg.from.id;
+        const chatID = msg.chat.id;
+
+        if (txt) {
+            await handleMessage(txt, userID, chatID, type);
+        } else if (type === "private") {
+            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" })
         }
-        console.log("=========== TG UPDATE END ===========");
     } catch (err) {
         console.log(err.stack);
     }
