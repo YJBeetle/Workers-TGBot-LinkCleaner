@@ -1,5 +1,4 @@
 name = "tgbot-biliantitracking"
-account_id = "8262c42da4aa51a84299ff549eb89c5b"
 
 main = "./index.js"
 compatibility_date = "2023-03-21"
