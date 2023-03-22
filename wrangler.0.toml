@@ -1,7 +1,7 @@
 name = "tgbot-biliantitracking"
 
 main = "./index.js"
-compatibility_date = "2021-09-28"
+compatibility_date = "2023-03-21"
 workers_dev = true
 
 vars = { TG_WEBHOOK_URL = "https://tgbot-biliantitracking.username.workers.dev", TG_BOT_TOKEN = "0123456789:AaBbCcDdEeFfGgHhIiJjKk-AaBbCcDdEeFf" }
