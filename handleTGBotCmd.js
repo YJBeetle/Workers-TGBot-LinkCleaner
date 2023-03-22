@@ -2,7 +2,8 @@ import { requestTelegramBotAPI } from "./telegram";
 
 async function handleTGBotCmd(request, pathname) {
     if (pathname == '/TGBotCmd/setWebhook') {
-        const result = await requestTelegramBotAPI("setWebhook", { "url": `${TG_WEBHOOK_URL}/${TG_BOT_TOKEN}` });
+        const url = new URL(request.url)
+        const result = await requestTelegramBotAPI("setWebhook", { "url": `${url.origin}/${TG_BOT_TOKEN}` });
         return new Response(await result.text(), { headers: { "content-type": "text/plain" } });
     } else if (pathname == '/TGBotCmd/getWebhookInfo') {
         const result = await requestTelegramBotAPI("getWebhookInfo");
