@@ -63,7 +63,7 @@ async function handleMessage(message) {
             await handleCommand(text, chatID, userID);
         } else {
             // 处理用户消息
-            const msg = update.message;
+            const msg = message;
             const txt = msg.text;
             const msgId = msg.message_id;
             const type = msg.chat.type;
