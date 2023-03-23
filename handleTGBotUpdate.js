@@ -19,15 +19,11 @@ async function handleCommand(text, chatID, userID) {
     }
 }
 
-async function handleMessage(message, userID, chatID, type, msgId) {
+async function handleText(message, userID, chatID, type, msgId) {
     const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
     const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
     if (!message) return;
 
-    if (message.startsWith("/")) {
-        // Command
-        await handleCommand(message, chatID, userID);
-    } else {
         const rawLinks = message.match(URLpattern);
         if (rawLinks) {
             const [originalLink] = rawLinks;
@@ -55,13 +51,18 @@ async function handleMessage(message, userID, chatID, type, msgId) {
 
             await requestTelegramBotAPI("sendMessage", messageData);
         }
-    }
 }
 
-
-async function handleTGBotUpdate(request) {
-    try {
-        const update = await request.json();
+async function handleMessage(message) {
+    const userID = message.from.id;
+    const chatID = message.chat.id;
+    if (message.text) {
+        const text = message.text;
+        if (text.startsWith("/")) {
+            // Command
+            await handleCommand(text, chatID, userID);
+        } else {
+            // 处理用户消息
         const msg = update.message;
         const txt = msg.text;
         const msgId = msg.message_id;
@@ -69,11 +70,58 @@ async function handleTGBotUpdate(request) {
         const userID = msg.from.id;
         const chatID = msg.chat.id;
 
-        if (txt) {
-            await handleMessage(txt, userID, chatID, type, msgId);
-        } else if (type === "private") {
+            await handleText(txt, userID, chatID, type, msgId);
+        }
+    } else {
+        // 未知内容类型
+        if (type === "private") {
             await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" })
         }
+    }
+}
+
+async function handleCallbackQuery(callback_query) {
+    console.log(callback_query);
+    const userID = callback_query.from.id;
+    const chatID = callback_query.message.chat.id;
+    console.log("userID:", userID);
+    console.log("chatID:", chatID);
+    const data = JSON.parse(callback_query.data);
+    console.log("data:", data);
+    await requestTelegramBotAPI("answerCallbackQuery", { callback_query_id: callback_query.id, text: "喵", show_alert: true });
+}
+
+async function handleInlineQuery(inline_query) {
+    console.log("inline_query:", inline_query);
+    console.log("inline_query.id:", inline_query.id);
+    const userID = inline_query.from.id;
+    console.log("userID:", userID);
+    const query = inline_query.query;
+    console.log("query:", query);
+    await requestTelegramBotAPI("answerInlineQuery", {
+        inline_query_id: inline_query.id,
+        results: [
+            {
+                type: 'article',
+                id: 0,
+                title: '点我试试？',
+                input_message_content: {
+                    message_text: '你点我了！我生气了！',
+                },
+            },
+        ]
+    });
+}
+
+async function handleTGBotUpdate(request) {
+    try {
+        const update = await request.json();
+        if (update.message)
+            await handleMessage(update.message);
+        else if (update.callback_query)
+            await handleCallbackQuery(update.callback_query);
+        else if (update.inline_query)
+            await handleInlineQuery(update.inline_query);
     } catch (err) {
         console.log(err.stack);
     }
