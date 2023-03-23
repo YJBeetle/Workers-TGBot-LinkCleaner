@@ -24,33 +24,33 @@ async function handleText(message, userID, chatID, type, msgId) {
     const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
     if (!message) return;
 
-        const rawLinks = message.match(URLpattern);
-        if (rawLinks) {
-            const [originalLink] = rawLinks;
-            let cleanLink = originalLink.replace(/\?.*$/g, "");
+    const rawLinks = message.match(URLpattern);
+    if (rawLinks) {
+        const [originalLink] = rawLinks;
+        let cleanLink = originalLink.replace(/\?.*$/g, "");
 
-            if (TWIpattern.test(originalLink)) {
-                cleanLink = cleanLink.replace(TWIpattern, "https://vxtwitter.com");
-            } else {
-                const result = await fetch(originalLink, { method: "HEAD", redirect: "manual" });
-                const location = result.headers.get("location") ?? originalLink;
-                cleanLink = location.replace(/\?.*$/g, "");
-            }
-
-            const messageData = { chat_id: chatID };
-
-            if (originalLink !== cleanLink) {
-                messageData.text = cleanLink;
-            } else {
-                messageData.text = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~"
-            }
-
-            if (type !== "private") {
-                messageData.reply_to_message_id = msgId;
-            }
-
-            await requestTelegramBotAPI("sendMessage", messageData);
+        if (TWIpattern.test(originalLink)) {
+            cleanLink = cleanLink.replace(TWIpattern, "https://vxtwitter.com");
+        } else {
+            const result = await fetch(originalLink, { method: "HEAD", redirect: "manual" });
+            const location = result.headers.get("location") ?? originalLink;
+            cleanLink = location.replace(/\?.*$/g, "");
         }
+
+        const messageData = { chat_id: chatID };
+
+        if (originalLink !== cleanLink) {
+            messageData.text = cleanLink;
+        } else {
+            messageData.text = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~"
+        }
+
+        if (type !== "private") {
+            messageData.reply_to_message_id = msgId;
+        }
+
+        await requestTelegramBotAPI("sendMessage", messageData);
+    }
 }
 
 async function handleMessage(message) {
@@ -63,12 +63,12 @@ async function handleMessage(message) {
             await handleCommand(text, chatID, userID);
         } else {
             // 处理用户消息
-        const msg = update.message;
-        const txt = msg.text;
-        const msgId = msg.message_id;
-        const type = msg.chat.type;
-        const userID = msg.from.id;
-        const chatID = msg.chat.id;
+            const msg = update.message;
+            const txt = msg.text;
+            const msgId = msg.message_id;
+            const type = msg.chat.type;
+            const userID = msg.from.id;
+            const chatID = msg.chat.id;
 
             await handleText(txt, userID, chatID, type, msgId);
         }
