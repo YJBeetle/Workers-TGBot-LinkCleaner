@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "tgbot-bili-anti-tracking",
+  "name": "tgbot-link-cleaner",
   "version": "1.0.0",
-  "description": "TGBot BiliAntiTracking",
+  "description": "TGBot LinkCleaner",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
