@@ -28,6 +28,36 @@ async function handleCommand({ text, chat }) {
         case 'help': {
             await requestTelegramBotAPI("sendMessage", { chat_id: chat.id, text: "直接给我发链接就行啦！" });
         } break;
+        case 'test': {
+            await requestTelegramBotAPI("sendMessage", {
+                chat_id: chat.id,
+                text: '鲨狸怎么叫',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: '咩咩咩',
+                                callback_data: JSON.stringify({ event: 'test', value: 1 }),
+                            },
+                            {
+                                text: '喵喵喵',
+                                callback_data: JSON.stringify({ event: 'test', value: 2 }),
+                            },
+                            {
+                                text: '汪汪汪',
+                                callback_data: JSON.stringify({ event: 'test', value: 3 }),
+                            },
+                        ],
+                        [
+                            {
+                                text: '大楚兴陈胜王',
+                                callback_data: JSON.stringify({ event: 'test', value: 4 }),
+                            },
+                        ],
+                    ],
+                },
+            });
+        } break;
         default: {
             // 未知指令
             await requestTelegramBotAPI("sendMessage", { chat_id: chat.id, text: "无路赛无路赛无路赛!" });
@@ -80,7 +110,19 @@ async function handleCallbackQuery(callback_query) {
     console.log("chatID:", chatID);
     const data = JSON.parse(callback_query.data);
     console.log("data:", data);
-    await requestTelegramBotAPI("answerCallbackQuery", { callback_query_id: callback_query.id, text: "喵", show_alert: true });
+    switch (data.event) {
+        case 'test': {
+            if (data.value == 4) {
+                await requestTelegramBotAPI("sendMessage", { chat_id: callback_query.message.chat.id, text: "对！狐狸就是这么叫！" });
+            } else {
+                await requestTelegramBotAPI("sendMessage", { chat_id: callback_query.message.chat.id, text: "哼！" });
+            }
+        } break;
+        default:
+            await requestTelegramBotAPI("answerCallbackQuery", { callback_query_id: callback_query.id, text: "这个按钮可能已经过时，请重新发送指令。", show_alert: true });
+            return;
+    }
+    await requestTelegramBotAPI("answerCallbackQuery", { callback_query_id: callback_query.id });
 }
 
 async function handleInlineQuery(inline_query) {
