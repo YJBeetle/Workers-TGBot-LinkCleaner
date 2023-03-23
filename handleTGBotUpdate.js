@@ -45,7 +45,7 @@ async function handleText({ text, chat, message_id }) {
         }
 
         // 如果不是私聊则引用回复
-        if (type !== "private") {
+        if (message.chat.type !== "private") {
             replyMessage.reply_to_message_id = message_id;
         }
 
@@ -64,7 +64,7 @@ async function handleMessage(message) {
         }
     } else {
         // 未知内容类型
-        if (type === "private") {
+        if (message.chat.type === "private") {
             await requestTelegramBotAPI("sendMessage", { chat_id: message.chat.id, text: "人家看不懂啦！" })
         }
     }
