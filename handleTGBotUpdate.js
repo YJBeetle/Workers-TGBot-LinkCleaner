@@ -21,7 +21,7 @@ async function handleCommand(text, chatID, userID) {
 
 async function handleMessage(message, userID, chatID, type, msgId) {
     const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
-    const TWIpattern = /twitter\.com/g;
+    const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
     if (!message) return;
 
     if (message.startsWith("/")) {
@@ -34,14 +34,20 @@ async function handleMessage(message, userID, chatID, type, msgId) {
             let cleanLink = originalLink.replace(/\?.*$/g, "");
 
             if (TWIpattern.test(originalLink)) {
-                cleanLink = cleanLink.replace(TWIpattern, "vxtwitter.com");
+                cleanLink = cleanLink.replace(TWIpattern, "https://vxtwitter.com");
             } else {
                 const result = await fetch(originalLink, { method: "HEAD", redirect: "manual" });
                 const location = result.headers.get("location") ?? originalLink;
                 cleanLink = location.replace(/\?.*$/g, "");
             }
 
-            const messageData = { chat_id: chatID, text: cleanLink };
+            const messageData = { chat_id: chatID };
+
+            if (originalLink !== cleanLink) {
+                messageData.text = cleanLink;
+            } else {
+                messageData.text = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~"
+            }
 
             if (type !== "private") {
                 messageData.reply_to_message_id = msgId;
