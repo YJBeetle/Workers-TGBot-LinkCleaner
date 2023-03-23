@@ -1,30 +1,29 @@
 import { requestTelegramBotAPI } from "./telegram";
 
-async function handleCommand(text, chatID, userID) {
+async function handleCommand({ text, chat }) {
     const commandEndPos = text.indexOf(' ');
     const command = text.substring(1, commandEndPos == -1 ? undefined : commandEndPos).toLowerCase();
     const param = commandEndPos == -1 ? null : text.substring(commandEndPos + 1);
 
     switch (command) {
         case 'start': {
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "我可以帮你删除链接中的跟踪信息，如抖音、B站短链等，或将twitter链接转换为Telegram中可直接预览的vxtwitter链接。\n请试着给我发链接吧！" });
+            await requestTelegramBotAPI("sendMessage", { chat_id: chat.id, text: "我可以帮你删除链接中的跟踪信息，如抖音、B站短链等，或将twitter链接转换为Telegram中可直接预览的vxtwitter链接。\n请试着给我发链接吧！" });
         } break;
         case 'help': {
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "直接给我发链接就行啦！" });
+            await requestTelegramBotAPI("sendMessage", { chat_id: chat.id, text: "直接给我发链接就行啦！" });
         } break;
         default: {
             // 未知指令
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "无路赛无路赛无路赛!" });
+            await requestTelegramBotAPI("sendMessage", { chat_id: chat.id, text: "无路赛无路赛无路赛!" });
         } break;
     }
 }
 
-async function handleText(message, userID, chatID, type, msgId) {
+async function handleText({ text, chat, message_id }) {
     const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
     const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
-    if (!message) return;
 
-    const rawLinks = message.match(URLpattern);
+    const rawLinks = text.match(URLpattern);
     if (rawLinks) {
         const [originalLink] = rawLinks;
         let cleanLink = originalLink.replace(/\?.*$/g, "");
@@ -37,45 +36,36 @@ async function handleText(message, userID, chatID, type, msgId) {
             cleanLink = location.replace(/\?.*$/g, "");
         }
 
-        const messageData = { chat_id: chatID };
+        const replyMessage = { chat_id: chat.id };
 
         if (originalLink !== cleanLink) {
-            messageData.text = cleanLink;
+            replyMessage.text = cleanLink;
         } else {
-            messageData.text = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~"
+            replyMessage.text = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~"
         }
 
+        // 如果不是私聊则引用回复
         if (type !== "private") {
-            messageData.reply_to_message_id = msgId;
+            replyMessage.reply_to_message_id = message_id;
         }
 
-        await requestTelegramBotAPI("sendMessage", messageData);
+        await requestTelegramBotAPI("sendMessage", replyMessage);
     }
 }
 
 async function handleMessage(message) {
-    const userID = message.from.id;
-    const chatID = message.chat.id;
+    // 在此处理不同消息类型 如 文本
     if (message.text) {
-        const text = message.text;
-        if (text.startsWith("/")) {
+        if (message.text.startsWith("/")) {
             // Command
-            await handleCommand(text, chatID, userID);
+            await handleCommand(message);
         } else {
-            // 处理用户消息
-            const msg = message;
-            const txt = msg.text;
-            const msgId = msg.message_id;
-            const type = msg.chat.type;
-            const userID = msg.from.id;
-            const chatID = msg.chat.id;
-
-            await handleText(txt, userID, chatID, type, msgId);
+            await handleText(message);
         }
     } else {
         // 未知内容类型
         if (type === "private") {
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "人家看不懂啦！" })
+            await requestTelegramBotAPI("sendMessage", { chat_id: message.chat.id, text: "人家看不懂啦！" })
         }
     }
 }
