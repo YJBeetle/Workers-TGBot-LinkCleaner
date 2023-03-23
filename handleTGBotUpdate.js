@@ -7,7 +7,7 @@ async function handleCommand(text, chatID, userID) {
 
     switch (command) {
         case 'start': {
-            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "我可以帮你删除链接中的跟踪信息，如抖音、B站短链，推特链接等。\n请试着给我发链接吧！" });
+            await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "我可以帮你删除链接中的跟踪信息，如抖音、B站短链等，或将twitter链接转换为Telegram中可直接预览的vxtwitter链接。\n请试着给我发链接吧！" });
         } break;
         case 'help': {
             await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "直接给我发链接就行啦！" });
@@ -20,26 +20,34 @@ async function handleCommand(text, chatID, userID) {
 }
 
 async function handleMessage(message, userID, chatID, type, msgId) {
-    const pattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
+    const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
+    const TWIpattern = /twitter\.com/g;
     if (!message) return;
 
     if (message.startsWith("/")) {
         // Command
         await handleCommand(message, chatID, userID);
     } else {
-        const rawLinks = message.match(pattern);
+        const rawLinks = message.match(URLpattern);
         if (rawLinks) {
-            const result = await fetch(rawLinks[0], { method: "HEAD", redirect: "manual" });
-            const location = result.headers.get("location") ?? rawLinks[0];
-            const cleanLinks = location.replace(/(\?+.*)$/g, '');
-            if (rawLinks[0] !== cleanLinks) {
-                if (type === "private")
-                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks });
-                else
-                    await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: cleanLinks, reply_to_message_id: msgId });
-            } else if (type === "private") {
-                await requestTelegramBotAPI("sendMessage", { chat_id: chatID, text: "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~" })
+            const [originalLink] = rawLinks;
+            let cleanLink = originalLink.replace(/\?.*$/g, "");
+
+            if (TWIpattern.test(originalLink)) {
+                cleanLink = cleanLink.replace(TWIpattern, "vxtwitter.com");
+            } else {
+                const result = await fetch(originalLink, { method: "HEAD", redirect: "manual" });
+                const location = result.headers.get("location") ?? originalLink;
+                cleanLink = location.replace(/\?.*$/g, "");
             }
+
+            const messageData = { chat_id: chatID, text: cleanLink };
+
+            if (type !== "private") {
+                messageData.reply_to_message_id = msgId;
+            }
+
+            await requestTelegramBotAPI("sendMessage", messageData);
         }
     }
 }
