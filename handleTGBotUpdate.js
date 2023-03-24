@@ -2,17 +2,19 @@ import { requestTelegramBotAPI } from "./telegram";
 
 async function handleUrl(originalLink) {
     const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
-
-    let cleanLink = originalLink.replace(/\?.*$/g, "");
-
-    if (TWIpattern.test(originalLink)) {
-        cleanLink = cleanLink.replace(TWIpattern, "https://vxtwitter.com");
+    const cleanLink = originalLink.replace(/\?.*$/g, "");
+    if (TWIpattern.test(cleanLink)) {
+        return cleanLink.replace(TWIpattern, "https://vxtwitter.com");
     } else {
-        const result = await fetch(originalLink, { method: "HEAD", redirect: "manual" });
-        const location = result.headers.get("location") ?? originalLink;
-        cleanLink = location.replace(/\?.*$/g, "");
+        const result = await fetch(cleanLink, { redirect: "manual" });
+        if (result.status === 301 || result.status === 302) {
+            const location = result.headers.get("location");
+            if (location) {
+                const absoluteUrl = new URL(location, cleanLink);
+                return absoluteUrl.toString().replace(/\?.*$/g, "");
+            }
+        }
     }
-
     return cleanLink;
 }
 
@@ -66,23 +68,27 @@ async function handleCommand({ text, chat }) {
 }
 
 async function handleText({ text, chat, message_id }) {
-    const rawLinks = text.match(/(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/gs);
-    if (rawLinks) {
-        let replytext = ''
-
-        for (const url of rawLinks) {
-            const cleanedUrl = await handleUrl(url)
-            if (cleanedUrl !== url)
-                replytext += cleanedUrl + '\n'
-        };
-        if (!replytext && chat.type !== "private") replytext = "该链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~";
-
-        await requestTelegramBotAPI("sendMessage", {
-            chat_id: chat.id,
-            text: replytext,
-            reply_to_message_id: (chat.type !== "private") ? message_id : null
-        });
+    const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
+    const rawLinks = text.match(URLpattern);
+    let replytext = ""
+    if (!rawLinks) {
+        replytext = chat.type !== "private" ? "" : "略略略";
+    } else {
+        const cleanedUrls = await Promise.all(rawLinks.map(handleUrl));
+        const cleanIsNoNeeded = "链接不需要清理跟踪参数哦，如果你认为这是个错误请向开发者反馈~";
+        if (1 === rawLinks.length) {
+            replytext += chat.type === "private" ? "这个" + cleanIsNoNeeded + "" : "";
+        } else {
+            cleanedUrls.forEach((url, index) => {
+                replytext += url !== rawLinks[index] ? "" + url + "\n" : "第" + (index + 1) + "个" + cleanIsNoNeeded + "\n";
+            });
+        }
     }
+    await requestTelegramBotAPI("sendMessage", {
+        chat_id: chat.id,
+        text: replytext,
+        reply_to_message_id: chat.type !== "private" ? message_id : null
+    });
 }
 
 async function handleMessage(message) {
