@@ -18,7 +18,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages publish --name=tgbot-link-cleaner-dev
+          command: pages publish --project-name=tgbot-link-cleaner-dev
           secrets: |
               TG_BOT_TOKEN
         env:
