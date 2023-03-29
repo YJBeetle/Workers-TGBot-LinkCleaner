@@ -1,5 +1,7 @@
 import { requestTelegramBotAPI } from "./telegram";
 
+const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
+
 async function handleUrl(originalLink) {
     const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
     const cleanLink = originalLink.replace(/\?.*$/g, "");
@@ -50,7 +52,6 @@ async function sendMessage(chat_id, text, reply_markup, reply_to_message_id) {
 }
 
 async function handleText({ text, chat, message_id }) {
-    const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
     const rawLinks = text.match(URLpattern);
     let replymarkup = null;
     let replytext = "";
@@ -88,7 +89,7 @@ async function handleText({ text, chat, message_id }) {
             cleanedUrls.forEach((url, index) => {
                 replytext += url !== rawLinks[index] ? "" + url + "\n" : "第" + (index + 1) + "个" + cleanIsNoNeeded + "\n";
             });
-            replytext += "\n\n🪢如果你对其中一些链接的处理结果不满意的话，还请你尝试将这些链接分开发送，每次只发送一条链接，以便更好地处理问题哦~\n"; 
+            replytext += "\n\n🪢如果你对其中一些链接的处理结果不满意的话，还请你尝试将这些链接分开发送，每次只发送一条链接，以便更好地处理问题哦~\n";
             await sendMessage(chat.id, replytext, null, chat.type !== "private" ? message_id : null);
         }
     }
@@ -148,19 +149,44 @@ async function handleInlineQuery(inline_query) {
     console.log("userID:", userID);
     const query = inline_query.query;
     console.log("query:", query);
-    await requestTelegramBotAPI("answerInlineQuery", {
-        inline_query_id: inline_query.id,
-        results: [
-            {
-                type: 'article',
-                id: 0,
-                title: '点我试试？',
-                input_message_content: {
-                    message_text: '你点我了！我生气了！',
+
+    const rawLinks = query.match(URLpattern);
+    if (!rawLinks) {
+        await requestTelegramBotAPI("answerInlineQuery", {
+            inline_query_id: inline_query.id,
+            results: [
+                {
+                    type: 'article',
+                    id: 0,
+                    title: '在这里输入链接就行了',
+                    input_message_content: {
+                        message_text: query,
+                    },
                 },
-            },
-        ]
-    });
+            ]
+        });
+    } else {
+        const result = await Promise.all(rawLinks.map(async rawLink => ({ raw: rawLink, cleaned: await handleUrl(rawLink) })));
+        console.log("result:", result);
+
+        let replyText = query;
+        result.forEach(e => replyText = replyText.replace(e.raw, e.cleaned));
+        console.log("replyText:", replyText);
+
+        await requestTelegramBotAPI("answerInlineQuery", {
+            inline_query_id: inline_query.id,
+            results: [
+                {
+                    type: 'article',
+                    id: 0,
+                    title: '点击发送清理后的结果',
+                    input_message_content: {
+                        message_text: replyText,
+                    },
+                },
+            ]
+        });
+    }
 }
 
 async function handleTGBotUpdate(request) {
