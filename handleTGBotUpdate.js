@@ -1,12 +1,26 @@
 import { requestTelegramBotAPI } from "./telegram";
+import { knownPattern } from "./ruleList";
 
 const URLpattern = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=+#]*)?/g;
 
 async function handleUrl(originalLink) {
-    const TWIpattern = /https:\/\/(vx)?twitter\.com/g;
-    const cleanLink = originalLink.replace(/\?.*$/g, "");
-    if (TWIpattern.test(cleanLink)) {
-        return cleanLink.replace(TWIpattern, "https://vxtwitter.com");
+    const originalURL = new URL(originalLink);
+    const cleanLink = originalLink.toString().replace(/\?.*$/g, "");
+    if (knownPattern.has(originalURL.hostname)) {
+        const originParams = new URLSearchParams(originalURL.search);
+        const replaceHost = knownPattern.get(originalURL.hostname)[0]
+        const preserveParams = knownPattern.get(originalURL.hostname)[1];
+
+        const parsedURL = new URL(cleanLink);
+        if (replaceHost !== "") parsedURL.hostname = replaceHost;
+        if (preserveParams[0] !== "") {
+            let searchParams = new URLSearchParams(parsedURL.search);
+            preserveParams.forEach(param => {
+                searchParams.append(param, originParams.get(param));
+            });
+            parsedURL.search = searchParams.toString();
+        }
+        return parsedURL;
     } else {
         const result = await fetch(cleanLink, { redirect: "manual" });
         if (result.status === 301 || result.status === 302) {
