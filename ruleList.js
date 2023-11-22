@@ -1,10 +1,10 @@
 const knownPattern = new Map();
 // (host,[replace host, [preserve params]])
 
-knownPattern.set('https://x.com', ['https://fxtwitter.com', ['']]);
-knownPattern.set('https://twitter.com', ['https://fxtwitter.com', ['']]);
-knownPattern.set('https://fxtwitter.com', ['']);
-knownPattern.set('https://vxtwitter.com', ['']);
-knownPattern.set('https://www.youtube.com/', ['', ['v']]);
+knownPattern.set('x.com', ['fxtwitter.com', ['']]);
+knownPattern.set('twitter.com', ['fxtwitter.com', ['']]);
+knownPattern.set('fxtwitter.com', ['']);
+knownPattern.set('vxtwitter.com', ['']);
+knownPattern.set('www.youtube.com', ['', ['v']]);
 
 export { knownPattern }
