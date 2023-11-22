@@ -1,5 +1,5 @@
 const knownPattern = new Map();
-// (host,[replace host, [presever params]])
+// (host,[replace host, [preserve params]])
 knownPattern.set('https://x.com', ['https://fxtwitter.com', ['']]);
 knownPattern.set('https://twitter.com', ['https://fxtwitter.com', ['']]);
 knownPattern.set('https://fxtwitter.com', ['']);
