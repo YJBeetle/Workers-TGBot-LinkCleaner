@@ -16,7 +16,9 @@ async function handleUrl(originalLink) {
         if (preserveParams[0] !== "") {
             let searchParams = new URLSearchParams(parsedURL.search);
             preserveParams.forEach(param => {
-                searchParams.append(param, originParams.get(param));
+                if (originParams.has(param)) {
+                    searchParams.append(param, originParams.get(param));
+                }
             });
             parsedURL.search = searchParams.toString();
         }
